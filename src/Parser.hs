@@ -27,6 +27,8 @@ lis = makeTokenParser
                         , "-"
                         , "*"
                         , "/"
+                        , "++"
+                        , "--"
                         , "<"
                         , ">"
                         , "&&"
@@ -44,15 +46,50 @@ lis = makeTokenParser
 -----------------------------------
 --- Parser de expresiones enteras
 -----------------------------------
-intexp :: Parser (Exp Int)
-intexp = chainl1 intterm addop
-
+--rehago la grmatica para dar jerarquía
+{-
+intexp :: = interm  
+intterm :: = factor + factor | factor - factor 
+factor :: = (intexp) | nat  | var++ | var--| var
+            
+-}
 addop :: Parser (Exp Int -> Exp Int -> Exp Int)
 addop = (reservedOp lis "+" >> return Plus)
   <|> (reservedOp lis "-" >> return Minus)
 
+-- No se que hacer con el minus U, preguntar
+mulop :: Parser (Exp Int -> Exp Int -> Exp Int)
+mulop = (reservedOp lis "*" >> return Times)
+  <|> (reservedOp lis "/" >> return Div)
+
+--esto no sé si esta bien, preguntar
+varop :: Parser (Exp Int)
+varop = do v <- identifier lis 
+   (try(reservedOp lis "++") >> return (VarInc v))
+  <|> (try(reservedOp lis "--") >> return (VarDec v))
+    <|> (return (Var v))
+
+{-chainl1 p op parses one or more occurrences of p, 
+separated by op Returns a value obtained by a left associative application of all functions returned by op to the values returned by p. 
+This parser can for example be used to eliminate left recursion which typically occurs in expression grammars.
+https://hackage.haskell.org/package/parsec-3.1.18.0/docs/Text-Parsec.html#g:1-}
+intexp :: Parser (Exp Int)
+intexp = chainl1 intterm addop
+
+
 intterm :: Parser (Exp Int)
-intterm = undefined
+intterm = chainl1 factor  mulop
+
+factor  :: Parser (Exp Int)
+factor  = (parens lis intexp)
+  <|> varop
+    <|> try ( do  
+              n <- natural lis
+              return (Const n))
+      <|> (do 
+              reservedOp lis "-"
+              e <- factor
+              return (UMinus e))
 
 ------------------------------------
 --- Parser de expresiones booleanas
