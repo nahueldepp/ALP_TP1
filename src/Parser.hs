@@ -50,7 +50,7 @@ lis = makeTokenParser
 {-
 intexp :: = interm  
 intterm :: = factor + factor | factor - factor 
-factor :: = (intexp) | nat  | var++ | var--| var
+factor :: = (intexp) | nat  | var++ | var--| var | -var
             
 -}
 addop :: Parser (Exp Int -> Exp Int -> Exp Int)
@@ -64,10 +64,11 @@ mulop = (reservedOp lis "*" >> return Times)
 
 --esto no sé si esta bien, preguntar
 varop :: Parser (Exp Int)
-varop = do v <- identifier lis 
-   (try(reservedOp lis "++") >> return (VarInc v))
-  <|> (try(reservedOp lis "--") >> return (VarDec v))
-    <|> (return (Var v))
+varop = do 
+          v <- identifier lis 
+          ((try(reservedOp lis "++") >> return (VarInc v))
+            <|> (try(reservedOp lis "--") >> return (VarDec v)))
+          (return (Var v))
 
 {-chainl1 p op parses one or more occurrences of p, 
 separated by op Returns a value obtained by a left associative application of all functions returned by op to the values returned by p. 
@@ -82,14 +83,14 @@ intterm = chainl1 factor  mulop
 
 factor  :: Parser (Exp Int)
 factor  = (parens lis intexp)
-  <|> varop
-    <|> try ( do  
-              n <- natural lis
-              return (Const n))
-      <|> (do 
+  <|> (do 
               reservedOp lis "-"
               e <- factor
               return (UMinus e))
+    <|> try (do
+                n <- natural lis
+                return (Const (fromInteger n))) 
+      <|> varop
 
 ------------------------------------
 --- Parser de expresiones booleanas
@@ -103,7 +104,7 @@ boolexp = undefined
 -----------------------------------
 
 comm :: Parser Comm
-comm = undefined
+comm = chainl1 
 
 
 ------------------------------------
