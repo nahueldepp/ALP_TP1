@@ -146,27 +146,36 @@ boolfactor =  (parens lis boolexp)
 --- Parser de comandos
 -----------------------------------
 
-comm :: Parser Comm
-comm =  (reserved lis "skip" >> (return Skip))
-        <|> try(do 
-                  v <- identifier lis 
-                  reserved lis "=" 
-                  iexp <- intexp 
-                  return (Let v iexp))
-          <|> try(do
-                    reserved  lis "if"
-                    b <- boolexp
-                    com1 <- braces lis comm
-                    reserved lis "else"
-                    com2 <- braces lis comm
-                    return (IfThenElse b com1 com2) 
-                    )
-            <|> try(do
-                      reserved lis "repeat" 
-                      com <- braces lis comm
-                      reserved lis "until"
-                      b <- boolexp
-                      (return (RepeatUntil com b)))
+comm :: Parser Comm 
+comm = (do
+              com1 <- commexpr
+              (do
+                  reservedOp lis ";"
+                  com2 <- comm
+                  return (Seq com1 com2))
+                  <|> return com1)
+
+commexpr :: Parser Comm
+commexpr =  (reserved lis "skip" >> (return Skip))
+            <|> (do 
+                      v <- identifier lis 
+                      reservedOp lis "=" 
+                      iexp <- intexp 
+                      return (Let v iexp))
+              <|> (do
+                        reserved  lis "if"
+                        b <- boolexp
+                        com1 <- braces lis comm
+                        reserved lis "else"
+                        com2 <- braces lis comm
+                        return (IfThenElse b com1 com2) 
+                        )
+                <|> (do
+                          reserved lis "repeat" 
+                          com <- braces lis comm
+                          reserved lis "until"
+                          b <- boolexp
+                          (return (RepeatUntil com b)))
                         
 
 

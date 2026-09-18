@@ -15,6 +15,8 @@ pVar = text
 pExp :: Exp a -> Doc
 pExp (Const  i ) = int i
 pExp (Var    x ) = pVar x
+pExp (VarInc x ) = pVar x <+> text "++"
+pExp (VarDec x ) = pVar x <+> text "--"
 pExp (UMinus n ) = text "-" <+> pExp n
 pExp (Plus  a b) = pExp a <+> text "+" <+> pExp b
 pExp (Times a b) = pExpMaybeParen a <+> text "*" <+> pExpMaybeParen b

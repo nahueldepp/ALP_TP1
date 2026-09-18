@@ -59,7 +59,7 @@ stepComm (RepeatUntil c b) state =
 -- Evalúa una expresión
 -- Completar la definición
 evalExp :: Exp a -> State -> Pair a State
-evalExp (Const i) state = return (i :!: state)
+evalExp (Const i) state =(i :!: state)
 evalExp (Var x) state = (lookfor x state) :!: state
 evalExp (UMinus x) state =
   let (n :!: state') = evalExp x state
